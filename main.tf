@@ -8,7 +8,6 @@ resource "aws_vpc" "main" {
 resource "aws_instance" "web" {
   ami           = "ami-0567589d25e06853e"
   instance_type = "t2.micro"
-  subnet_id     = aws_subnet.main.id
   tags = {
     Name = "web-instance"
   }
