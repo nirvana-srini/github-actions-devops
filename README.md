@@ -21,6 +21,8 @@ inside project need to create a .github/workflows/test.yaml
 
 For keys: `setting-> secrets and variables -> create secret `
 
-
+# Deployment protection rules
+Add reviewers for production manual approvals otherwise automatically run the workflow job.
+![1793554441247](image/README/1793554441247.png)
 
 
