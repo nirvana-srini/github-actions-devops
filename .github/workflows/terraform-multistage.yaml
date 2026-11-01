@@ -35,10 +35,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
             name: tfplan
-            include-hidden-files: true
-            path: |
+            path:
               tfplan
-              .terraform.lock.hcl
 
   apply_job:  
     name: Terraform Apply
@@ -60,12 +58,13 @@ jobs:
         with:
           terraform_version: 1.14.6
 
+      - name: Terraform Init
+        run: terraform init
+        
       - name: Download plan artifact
         uses: actions/download-artifact@v4
         with:
             name: tfplan
-      - name: Terraform Init
-        run: terraform init -input=false -lockfile=readonly
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
