@@ -305,3 +305,8 @@ resource "aws_lb_listener" "http_listener" {
     target_group_arn = aws_lb_target_group.fastapi_tg.arn
   }
 }
+
+
+output "fastapi_url" {
+  value = "http://${aws_lb.fastapi_alb.dns_name}"
+}
