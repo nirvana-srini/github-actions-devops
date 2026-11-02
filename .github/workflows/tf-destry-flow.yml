@@ -20,7 +20,7 @@ jobs:
       - name: Configure AWS Plan Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PROD }}
+          role-to-assume: ${{ secrets.AWS_PLAN_ROLE_ARN }}
           aws-region: ${{ vars.AWS_DEFAULT_REGION }}
 
       - name: Set up Terraform
