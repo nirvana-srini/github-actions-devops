@@ -6,7 +6,10 @@ on:
 permissions:
   id-token: write
   contents: read
-      
+
+env:
+  TF_VAR_ssh_public_key: ${{ vars.SSH_PUBLIC_KEY }}
+
 jobs:
   planning_job:
     name: Terraform CICD

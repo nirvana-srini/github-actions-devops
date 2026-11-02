@@ -14,7 +14,7 @@ resource "aws_subnet" "public-subnet" {
   }
 }
 
-resource "aws-internet_gateway" "my-igw" {
+resource "aws_internet_gateway" "my-igw" {
   vpc_id = aws_vpc.main.id
   tags = {
     Name = "my-igw"
@@ -64,18 +64,19 @@ resource "aws_security_group" "web_sg" {
   }
 }
 
+
 resource "aws_key_pair" "my_key_pair" {
   key_name   = "my-key-pair"
-  public_key = file("~/.ssh/id_rsa.pub")
+  public_key = var.ssh_public_key
 }
 
 resource "aws_instance" "bastion-host" {
   ami                         = "ami-0567589d25e06853e"
   instance_type               = "t2.micro"
-  security_groups             = [aws_security_group.web_sg.name]
+  vpc_security_group_ids      = [aws_security_group.web_sg.id]
   associate_public_ip_address = true
   subnet_id                   = aws_subnet.public-subnet.id
-  key_name                    = "my-key-pair"
+  key_name                    = aws_key_pair.my_key_pair.key_name
 
   tags = {
     Name = "bastion-host"
@@ -100,7 +101,7 @@ resource "aws_security_group" "private_sg" {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"]
+    cidr_blocks = ["10.0.0.0/0"]
   }
 
   ingress {
@@ -119,10 +120,10 @@ resource "aws_security_group" "private_sg" {
 resource "aws_instance" "private-instance" {
   ami                         = "ami-0567589d25e06853e"
   instance_type               = "t2.micro"
-  security_groups             = [aws_security_group.private_sg.name]
+  vpc_security_group_ids      = [aws_security_group.private_sg.id]
   associate_public_ip_address = false
   subnet_id                   = aws_subnet.private-subnet.id
-  key_name                    = "my-key-pair"
+  key_name                    = aws_key_pair.my_key_pair.key_name
 
   tags = {
     Name = "private-instance"
