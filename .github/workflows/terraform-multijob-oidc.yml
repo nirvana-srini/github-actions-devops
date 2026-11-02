@@ -1,4 +1,4 @@
-name: Github Actions Workflow Terraform CICD
+name: Github Actions Workflow Terraform CICD OIDC
 
 on:
   workflow_dispatch:
