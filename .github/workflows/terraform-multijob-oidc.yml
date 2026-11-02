@@ -2,9 +2,10 @@ name: Github Actions Workflow Terraform CICD
 
 on:
   workflow_dispatch:
-  permissions:
-    id-token: write
-    contents: read
+
+permissions:
+  id-token: write
+  contents: read
       
 jobs:
   planning_job:
