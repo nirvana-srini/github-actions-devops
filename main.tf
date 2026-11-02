@@ -117,6 +117,45 @@ resource "aws_security_group" "private_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
+resource "aws_eip" "nat_eip" {
+  domain = "vpc"
+
+  tags = {
+    Name = "nat-eip"
+  }
+}
+# 3. Private Route Table
+resource "aws_route_table" "private-route-table" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.my_nat.id
+  }
+
+  tags = {
+    Name = "private-route-table"
+  }
+}
+
+# 4. Associate Private Subnet with Route Table
+resource "aws_route_table_association" "private-association" {
+  subnet_id      = aws_subnet.private-subnet.id
+  route_table_id = aws_route_table.private-route-table.id
+}
+
+resource "aws_nat_gateway" "my_nat" {
+  allocation_id = aws_eip.nat_eip.id
+  subnet_id     = aws_subnet.public-subnet.id
+
+  depends_on = [aws_internet_gateway.my-igw]
+
+  tags = {
+    Name = "my-nat-gateway"
+  }
+}
+
 resource "aws_instance" "private-instance" {
   ami                         = "ami-0567589d25e06853e"
   instance_type               = "t2.micro"
@@ -127,5 +166,58 @@ resource "aws_instance" "private-instance" {
 
   tags = {
     Name = "private-instance"
+  }
+}
+
+
+
+
+resource "null_resource" "deploy_python" {
+
+  triggers = {
+    app_hash    = filesha256("${path.module}/app/app.py")
+    req_hash    = filesha256("${path.module}/app/requirements.txt")
+    script_hash = filesha256("${path.module}/app/install.sh")
+    instance_id = aws_instance.private-instance.id
+  }
+
+  connection {
+    type = "ssh"
+
+    host = aws_instance.private-instance.private_ip
+    user = "ec2-user"
+
+    bastion_host = aws_instance.bastion-host.public_ip
+    bastion_user = "ec2-user"
+
+    private_key         = var.ssh_private_key
+    bastion_private_key = var.ssh_private_key
+
+    timeout = "5m"
+  }
+
+  # Copy Python application
+  provisioner "file" {
+    source      = "${path.module}/app/app.py"
+    destination = "/tmp/app.py"
+  }
+
+  # Copy dependencies
+  provisioner "file" {
+    source      = "${path.module}/app/requirements.txt"
+    destination = "/tmp/requirements.txt"
+  }
+
+  # Copy installation script
+  provisioner "file" {
+    source      = "${path.module}/app/install.sh"
+    destination = "/tmp/install.sh"
+  }
+
+  # Execute script on private EC2
+  provisioner "remote-exec" {
+    inline = [
+      "bash /tmp/install.sh"
+    ]
   }
 }
