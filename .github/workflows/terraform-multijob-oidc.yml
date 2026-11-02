@@ -47,7 +47,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: planning_job
     environment: production # Mandatory to set the environment to production for approval before apply
-
+    permissions:
+      id-token: write
+      contents: read
+      
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
