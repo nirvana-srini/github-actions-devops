@@ -1,70 +1,70 @@
-name: Github Actions Workflow Terraform CICD
+# name: Github Actions Workflow Terraform CICD
 
-on:
-  workflow_dispatch:
+# on:
+#   workflow_dispatch:
 
-jobs:
-  planning_job:
-    name: Terraform CICD
-    runs-on: ubuntu-latest
+# jobs:
+#   planning_job:
+#     name: Terraform CICD
+#     runs-on: ubuntu-latest
 
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+#     env:
+#       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#       AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
         
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v4
-        with:
-          terraform_version: 1.14.6
+#       - name: Set up Terraform
+#         uses: hashicorp/setup-terraform@v4
+#         with:
+#           terraform_version: 1.14.6
 
-      - name: Terraform Init
-        run: terraform init
+#       - name: Terraform Init
+#         run: terraform init
 
-      - name: Terraform Validate
-        run: terraform validate
+#       - name: Terraform Validate
+#         run: terraform validate
 
-      - name: Terraform Plan
-        run: terraform plan -out=tfplan
+#       - name: Terraform Plan
+#         run: terraform plan -out=tfplan
 
-      - name: Upload plan artifact
-        uses: actions/upload-artifact@v4
-        with:
-            name: tfplan
-            path:
-              tfplan
+#       - name: Upload plan artifact
+#         uses: actions/upload-artifact@v4
+#         with:
+#             name: tfplan
+#             path:
+#               tfplan
 
-  apply_job:  
-    name: Terraform Apply
-    runs-on: ubuntu-latest
-    needs: planning_job
-    environment: production # Mandatory to set the environment to production for approval before apply
+#   apply_job:  
+#     name: Terraform Apply
+#     runs-on: ubuntu-latest
+#     needs: planning_job
+#     environment: production # Mandatory to set the environment to production for approval before apply
 
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+#     env:
+#       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+#       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+#       AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
         
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v4
-        with:
-          terraform_version: 1.14.6
+#       - name: Set up Terraform
+#         uses: hashicorp/setup-terraform@v4
+#         with:
+#           terraform_version: 1.14.6
 
-      - name: Terraform Init
-        run: terraform init
-        
-      - name: Download plan artifact
-        uses: actions/download-artifact@v4
-        with:
-            name: tfplan
+#       - name: Terraform Init
+#         run: terraform init
 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
+#       - name: Download plan artifact
+#         uses: actions/download-artifact@v4
+#         with:
+#             name: tfplan
+
+#       - name: Terraform Apply
+#         run: terraform apply -auto-approve tfplan
