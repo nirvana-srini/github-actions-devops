@@ -1,28 +1,99 @@
+
 name: Destroy existing TF infra
+
 on:
   workflow_dispatch:
-    
+    inputs:
+      confirmation:
+        description: "Type DESTROY-PRODUCTION to confirm"
+        required: true
+        type: string
+
 permissions:
-      id-token: write
-      contents: read
-    
+  id-token: write
+  contents: read
+
+concurrency:
+  group: terraform-production-state
+  cancel-in-progress: false
+
 jobs:
-  destroy_job:
-    name: Terraform Destroy
+  destroy_plan:
+    name: Review Destroy Plan
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      inputs.confirmation == 'DESTROY-PRODUCTION'
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Credentials
+
+      - name: Configure AWS Plan Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PROD }}
+          role-to-assume: ${{ secrets.AWS_PLAN_ROLE_ARN }}
           aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+
+      - name: Verify AWS Identity
+        run: aws sts get-caller-identity
+
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v4
         with:
           terraform_version: 1.14.6
+
       - name: Terraform Init
-        run: terraform init
-      - name: Terraform Destroy
-        run: terraform destroy -auto-approve
+        run: terraform init -input=false
+
+      - name: Terraform Destroy Plan
+        run: terraform plan -destroy -input=false -out=destroy.tfplan
+
+      - name: Show Resource Addresses to Destroy
+        run: |
+          terraform show -json destroy.tfplan \
+            | jq -r '.resource_changes[] |
+                select(.change.actions | index("delete")) |
+                .address'
+
+      - name: Upload Destroy Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: destroy-plan
+          path: destroy.tfplan
+          retention-days: 1
+
+  destroy_job:
+    name: Terraform Destroy
+    needs: destroy_plan
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Destroy Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DESTROY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+
+      - name: Verify AWS Identity
+        run: aws sts get-caller-identity
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: 1.14.6
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Download Destroy Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: destroy-plan
+
+      - name: Apply Reviewed Destroy Plan
+        run: terraform apply -input=false destroy.tfplan
